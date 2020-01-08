@@ -50,6 +50,85 @@ bool isValid(int row, int col, int n, int m)
 int rowNum[] = {-1, 0, 0, 1}; 
 int colNum[] = {0, -1, 1, 0}; 
 
+int final_DFIS(int** mat, int n, int m, Point src, Point dest, int limit) 
+{ 
+    int depth = 1;
+    states_explored=0;
+    // check source and destination cell 
+    // of the matrix have value 1 
+    if (!mat[src.x][src.y] || !mat[dest.x][dest.y]) 
+        return -1; 
+  
+    bool visited[n][m]; 
+    memset(visited, false, sizeof visited); 
+    // Mark the source cell as visited 
+    visited[src.x][src.y] = true; 
+  
+    // Create a queue for BFS 
+    //vector <queueNode*> q; 
+    stack <queueNode*> q; 
+      
+    // Distance of source cell is 0 
+    queueNode* s = new queueNode;
+    s->pt.x = src.x;
+    s->pt.y = src.y;
+    s->dist = 0;
+    s->pptr = NULL;
+    //q.push_back(s);  // Enqueue source cell 
+    q.push(s);
+    // Do a BFS starting from source cell 
+
+    while (!q.empty() && (depth<=limit)) 
+    { 
+        states_explored++;
+        //queueNode* curr = q.back(); 
+        queueNode* curr = q.top(); 
+        Point pt = curr->pt; 
+
+        if (pt.x == dest.x && pt.y == dest.y) 
+        {
+            queueNode* root = curr;
+            while(root->pptr!=NULL)
+            {
+                final_path[root->pt.x][root->pt.y]=1;
+                root = root->pptr;
+            }
+            final_path[root->pt.x][root->pt.y]=1;
+            return curr->dist; 
+        }
+  
+        // Otherwise dequeue the front cell in the queue 
+        // and enqueue its adjacent cells 
+        //q.pop_back(); 
+        q.pop(); 
+  
+        for (int i = 0; i < 4; i++) 
+        { 
+            int row = pt.x + rowNum[i]; 
+            int col = pt.y + colNum[i]; 
+              
+            // if adjacent cell is valid, has path and 
+            // not visited yet, enqueue it. 
+            if (isValid(row, col, n, m) && mat[row][col] &&  
+               !visited[row][col]) 
+            { 
+                // mark cell as visited and enqueue it 
+                visited[row][col] = true; 
+                queueNode* Adjcell = new queueNode;
+                Adjcell->pt.x = row;
+                Adjcell->pt.y = col;
+                Adjcell->dist = curr->dist + 1;
+                Adjcell->pptr = curr;
+                //q.push_back(Adjcell); 
+                q.push(Adjcell); 
+            } 
+        } 
+        depth++;
+    } 
+  
+    // Return -1 if destination cannot be reached 
+    return -1; 
+} 
 int final_DFS(int** mat, int n, int m, Point src, Point dest) 
 { 
 	states_explored=0;
@@ -123,7 +202,6 @@ int final_DFS(int** mat, int n, int m, Point src, Point dest)
             } 
         } 
     } 
-  
     // Return -1 if destination cannot be reached 
     return -1; 
 } 
@@ -353,6 +431,22 @@ int main()
     else if(mode == 1)
     {
     	dist = final_DFS(input, n, m, source, dest); 
+    }
+    else if(mode == 2)
+    {
+        int limit = 1;
+        while(true)
+        {
+            dist = final_DFIS(input, n, m, source, dest, limit);
+            if(dist == -1)
+            {
+                limit++;
+            }
+            else
+            {
+                break;
+            }
+        }
     }
     //int dist = final_BFS(input, source, dest); 
     //int dist_DFS = final_DFS(input, source, dest); 
