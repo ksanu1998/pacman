@@ -281,9 +281,9 @@ int final_BFS(int** mat, int n, int m, Point src, Point dest)
     return -1; 
 } 
 
-int main() 
+int main()
 { 	
-	int mode;
+    int mode;
     int n, m;
     int counter = 0;
     bool flag = true;
@@ -301,7 +301,7 @@ int main()
         getline(cin, s);
         //cout<<s.size()<<endl;
         if ((s == "quit") || (s == "exit")) {
-            break;
+            exit(0);
         }
         //cout << "String: " << s << endl;
         //cout << "String Size: " << s.size() << endl;
