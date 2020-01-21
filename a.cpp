@@ -13,10 +13,14 @@ int main(int argc, char** argv) {
     }
     ifstream in_file;
     string line;
+    bool flag = true;
     in_file.open(argv[1]);
     if (in_file.is_open()){
         while (getline (in_file, line)){
             //cout << line << endl;
+            if (flag == true) {
+                flag = false;
+            }
             for (int i = 0; i < line.size(); i++) {
                 int j = i;
                 //cout << line[i];
