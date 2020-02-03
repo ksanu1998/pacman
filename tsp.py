@@ -9,6 +9,7 @@ import random
 import math
 import numpy
 from scipy.special import expit
+import statistics
 
 def process_input(input_file):
 	f = open(input_file, "r+")
@@ -44,7 +45,10 @@ def generate_neighbours(cycle, n):
 		neighbours.append(cycle_copy)
 	return neighbours
 def create_cycle(n):
-	return list(range(0, n))
+	cyc = numpy.random.permutation(n)
+	# print(cyc)
+	# return list(range(0, n))
+	return cyc
 def cost_of_cycle(cycle, n, adjacency_matrix):
 	cost = 0
 	for i in range(0, n-1):
@@ -80,64 +84,96 @@ def select_parents(fitness_matrix):
 				parent1=i
 				parent2=i+1
 				break
-		# print(parent1, parent2)
-		# return parent1, parent2, i
 		new_population.append(parent1)
 		new_population.append(parent2)
 		index_matrix.append(i)
 	return new_population, index_matrix
+
 def do_crossover(new_population, index_matrix, n):
-	# print(index)
-	for k in range(0,len(index_matrix)):
+	l = 0
+	m = 0
+	for k in range(0,len(new_population)):
+		if m==n:
+			break
 		rand1 = int(random.random()*n)
 		rand2 = int(random.random()*n)
 		child1 = []
 		child2 = []
 		part1 = []
-		count1 = n-index_matrix[k]
-		count2 = n-index_matrix[k]+1
+		count1 = n-index_matrix[l]
+		count2 = n-index_matrix[l]+1
+		if count1>n:
+			count1 = n
+		if count2>n:
+			count2 = n
+		if count1<0:
+			count1 = 0
+		if count2<n:
+			count2 = 0
 		for i in range(0, n):
 			if count1 == n:
 				count1=0
 			if count2 == n:
 				count2=0
-			temp1 = new_population[index_matrix[k]]
-			temp2 = new_population[index_matrix[k]+1]
+			temp1 = new_population[k]
+			temp2 = new_population[k+1]
 			child1.append(temp1[count1])
-			child2.append([count2])
+			child2.append(temp2[count2])
 			count1+=1
 			count2+=1
-		# print(child1)
-		# print(child2)
-		# return child1, child2
-		new_population[index_matrix[k]]=child1
-		new_population[index_matrix[k]+1]=child2
+		new_population[k]=child1
+		new_population[k+1]=child2
+		m+=2
+		l+=1
 	return new_population
-def mutate(child1, child2):
-	rand1 = int(random.random()*n)
-	rand2 = int(random.random()*n)
-	temp1 = child1[rand1]
-	temp2 = child2[rand1]
-	child1[rand1] = child1[rand2]
-	child1[rand2] = temp1
-	child2[rand1] = child2[rand2]
-	child2[rand2] = temp2
-	return child1, child2
+
+def mutate(new_population, n):
+	for i in range(0, len(new_population)):
+		for k in range(0,int(n/10)):
+			rand1 = int(random.random()*n)
+			rand2 = int(random.random()*n)
+			temp1 = new_population[i][rand1]
+			new_population[i][rand1] = new_population[i][rand2]
+			new_population[i][rand2] = temp1
+	return new_population
+
+def genetic_algorithm(cycle, neighbours, n, adjacency_matrix):
+	neighbours.append(cycle)
+	generation = 0
+	while generation<100:
+		# print("Generation: ", generation)
+		fitness_matrix = find_fitness(neighbours, n, adjacency_matrix)
+		min_path = neighbours[0]
+		min_path_cost = cost_of_cycle(neighbours[0], n, adjacency_matrix)
+		for i in range(0, len(neighbours)):
+			if cost_of_cycle(neighbours[i], n, adjacency_matrix)<cost_of_cycle(min_path, n, adjacency_matrix):
+				min_path = neighbours[i]
+				min_path_cost = cost_of_cycle(neighbours[i], n, adjacency_matrix)
+		new_population, index_matrix = select_parents(fitness_matrix)
+		for i in range(0,len(new_population)):
+			new_population[i]=neighbours[new_population[i]]
+		new_population = do_crossover(new_population, index_matrix, n)
+		mutated_population = mutate(new_population, n)
+		neighbours = mutated_population
+		generation+=1
+	return min_path, min_path_cost
+
 def do_simulated_annealing(cycle, adjacency_matrix, n):
-	t = 100000
+	t = 10000
+	# t=0.0001
 	coolingRate1 = 0.005
 	coolingRate2 = 0.025
 	coolingRate3 = 0.050
-	delta_e = 1
 	best_path = copy.deepcopy(cycle)
 	while t>0.01:
+	# while t<10000:
 		# print(t, cost_of_cycle(cycle, n, adjacency_matrix), cost_of_cycle(best_path, n, adjacency_matrix))
 		if cost_of_cycle(cycle, n, adjacency_matrix) <= cost_of_cycle(best_path, n, adjacency_matrix):
 			best_path = cycle
-			cost_of_cycle(best_path, n, adjacency_matrix)
-		rand_neighbour = int(n*random.random())
-		if rand_neighbour > n-2:
-			rand_neighbour = n-2
+			# cost_of_cycle(best_path, n, adjacency_matrix)
+		rand_neighbour = int(n*random.random())%(n-1)
+		# if rand_neighbour > n-2:
+		# 	rand_neighbour = n-2
 		new_neighbour = copy.deepcopy(cycle)
 		swap_elements(new_neighbour, rand_neighbour)
 		# print(new_neighbour)
@@ -145,33 +181,36 @@ def do_simulated_annealing(cycle, adjacency_matrix, n):
 		probability = expit(delta_e)
 		# probability = 1/(1+(numpy.float128(math.exp(-delta_e/t))))
 		# print(probability)
-		if probability > random.random():
+		if probability >= random.random():
 			cycle = new_neighbour
-			# print("hi")
-		# t=t-1 #scheme1
+		t=t-1 #scheme1
 		# t=t*(1-coolingRate1) #scheme2
-		t=t*(1-coolingRate2) #scheme3
+		# t=t*(1-coolingRate2) #scheme3
 		# t=t*(1-coolingRate3) #scheme4
+		# t=t/2 #scheme5
 	return best_path
 def main():
 	mode, n, cities, adjacency_matrix = process_input(sys.argv[1])
 	cycle = create_cycle(n)
+	cycle2 = copy.deepcopy(cycle)
 	neighbours = generate_neighbours(cycle,n)
-	# neighbour_cost = cost_of_neighbours(neighbours, n, adjacency_matrix)
-	# min_cost_path = do_simulated_annealing(cycle, adjacency_matrix, n) #
-	# print(cost_of_cycle(min_cost_path, n, adjacency_matrix)) #
-	# for i in min_cost_path: #
-	# 	print(cities[i]) #
+	neighbours2 = copy.deepcopy(neighbours)
+	# simulated annealing
+	neighbour_cost = cost_of_neighbours(neighbours, n, adjacency_matrix)
+	min_cost_path = do_simulated_annealing(cycle, adjacency_matrix, n) #
+	print("Simulated Annealing")
+	print(cost_of_cycle(min_cost_path, n, adjacency_matrix)) #
+	for i in min_cost_path: #
+		print(cities[i]) #
 	# print(min_cost_path)
-	fitness_matrix = find_fitness(neighbours, n, adjacency_matrix)
-	# print(fitness_matrix)
-	new_population, index_matrix = select_parents(fitness_matrix)
-	# print(new_population)
-	for i in range(0,len(new_population)):
-		new_population[i]=neighbours[new_population[i]]
-	# print(new_population)
-	# print(neighbours[parent1], neighbours[parent2])
-	# child1, child2 = do_crossover(parent1, parent2, n, index)
-	new_population = do_crossover(new_population, index_matrix, n)
+	print("\n")
+	###################################
+	# genetic algorithm
+	gen_path, gen_cost = genetic_algorithm(cycle2, neighbours2, n, adjacency_matrix)
+	print("Genetic Algorithm")
+	print(gen_cost)
+	for i in gen_path: #
+		print(cities[i]) #
+	###################################
 
 main()
