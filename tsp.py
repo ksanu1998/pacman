@@ -88,7 +88,7 @@ def select_parents(fitness_matrix):
 	return new_population, index_matrix
 def do_crossover(new_population, index_matrix, n):
 	# print(index)
-	for k in range(0,len(new_population)):
+	for k in range(0,len(index_matrix)):
 		rand1 = int(random.random()*n)
 		rand2 = int(random.random()*n)
 		child1 = []
@@ -104,7 +104,7 @@ def do_crossover(new_population, index_matrix, n):
 			temp1 = new_population[index_matrix[k]]
 			temp2 = new_population[index_matrix[k]+1]
 			child1.append(temp1[count1])
-			child2.append(temp2[count2])
+			child2.append([count2])
 			count1+=1
 			count2+=1
 		# print(child1)
@@ -169,7 +169,7 @@ def main():
 	# print(new_population)
 	for i in range(0,len(new_population)):
 		new_population[i]=neighbours[new_population[i]]
-
+	# print(new_population)
 	# print(neighbours[parent1], neighbours[parent2])
 	# child1, child2 = do_crossover(parent1, parent2, n, index)
 	new_population = do_crossover(new_population, index_matrix, n)
